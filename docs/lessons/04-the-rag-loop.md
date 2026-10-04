@@ -14,22 +14,24 @@ summary: Retrieve, build a grounded prompt with numbered sources, and generate a
 // 1. Retrieve
 hits, _ := r.Search(question, "hybrid", 4)
 
-// 2. Augment
-for i, h := range hits {
-	fmt.Fprintf(&ctx, "[%d] (%s > %s)\n%s\n\n", i+1, h.Chunk.Source, h.Chunk.Heading, h.Chunk.Text)
-}
-user := "Context:\n" + ctx.String() + "\nQuestion: " + question
+// 2. Augment: "[1] (file > heading)\ntext" for each hit, then the question
+user := retrieve.Prompt(question, hits)
 
 // 3. Generate
-r.LLM.Chat([]ai.Message{{Role: "system", Content: systemPrompt}, {Role: "user", Content: user}}, print)
+r.LLM.Chat([]ai.Message{
+	{Role: "system", Content: retrieve.SystemPrompt},
+	{Role: "user", Content: user},
+}, print)
 ```
 
 ## The system prompt does three jobs
 
 ```text
+You are a helpful assistant answering questions about the user's documents.
 Answer the question using ONLY the numbered context passages.
 Cite the passages you used like [1] or [2].
 If the context does not contain the answer, say "I don't know based on the documents."
+Keep answers short.
 ```
 
 1. **Grounding**: use the passages, not memory.
@@ -50,11 +52,30 @@ What `llama3.2` (3B) answered:
 
 | Question | Answer |
 |---|---|
-| Vacation days (RAG) | "According to [2], full-time employees receive 24 days of paid annual leave per calendar year." |
+| What does KST-503 mean? (RAG) | "According to [1], KST-503 means the API is in scheduled maintenance, specifically on Sundays from 02:00 to 04:00 UTC." |
 | Vacation days (no RAG) | "I don't have information about your employer, Orbita Labs..." |
 | CEO's name (RAG) | "I don't know based on the documents." |
 
 The CEO is never mentioned in the documents, so "I don't know" is the **correct** answer. A RAG system that admits ignorance is worth far more than one that guesses.
+
+## The escape hatch has a price
+
+Ask `How many vacation days do I get?` and the 3B model may reply:
+
+```text
+I don't know based on the documents. The context only mentions "Annual leave" and does not
+specify whether this is referring to paid annual leave or vacation days specifically.
+```
+
+The right passage was retrieved, but the model took "vacation" ≠ "annual leave" literally and used its permission to refuse. We measured three prompt variants on the eval set (lesson 6):
+
+| System prompt | Answers correct |
+|---|---|
+| An earlier, shorter prompt: "Answer using only the context. One short sentence." (no "I don't know" instruction, no headings in the context) | 16 / 18 |
+| Strict "only if nothing is relevant, say I don't know" | 14 / 18 |
+| The prompt above | 15 / 18 |
+
+More permission to refuse means fewer invented answers but more false refusals, and smaller models feel this most. Larger models usually handle paraphrases better, so try a hosted one (for example `CHAT_PROVIDER=anthropic`) and compare. Measure it rather than guess.
 
 ## Always look at the prompt
 

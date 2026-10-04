@@ -46,21 +46,29 @@ keyword    0.78   0.94   0.85
            miss: How quickly must I respond when I get paged at night?
 hybrid     0.83   1.00   0.91
 
-Answer accuracy: 16/18
+Answer accuracy: 15/18
 ```
 
 ## Read the failures, not just the score
 
-Both answer failures had **perfect retrieval**:
+All three answer failures had **perfect retrieval**:
 
 ```text
 FAIL What is the food budget per day when travelling abroad?
-     -> There is no mention of a food budget per day in the provided context.
+     -> I don't know based on the documents. The context passages do not mention a specific
+        food budget for traveling abroad.
 FAIL I bought a 700 dollar monitor for a client demo. Who has to sign off?
-     -> The manager who reviews access to production systems would need to sign off...
+     -> I don't know based on the documents. There is no information about signing off for
+        expenses related to client demos or equipment purchases.
+FAIL Can my friend come to the Lisbon office with me?
+     -> According to [2], visitors must be accompanied by an employee at all times, so your
+        answer would depend on whether you are accompanying your friend or not.
 ```
 
-The 3B model did not connect "food budget" with "meal allowance", and in the second case it grabbed a passage about *access reviews* instead of the *expense approval* rule. Retrieval was fine; generation failed. The fixes are on the generation side: a bigger chat model, fewer distracting chunks (lower k, or a reranker), or a prompt that asks the model to quote the passage before answering.
+- The first two are **false refusals**: the 3B model did not connect "food budget" with "meal allowance", or a 700 dollar purchase with "any single expense above 500 USD". Lesson 4 shows how the "I don't know" instruction trades hallucinations for refusals.
+- The third is arguably **correct**, but our grader wanted the word "Perch" (visitors must be registered in Perch). That is a *grader* failure, which is why you always read the failures instead of trusting the number.
+
+Retrieval was fine; generation failed. The fixes are on the generation side: a bigger chat model, fewer distracting chunks (lower k, or a reranker), or a prompt that asks the model to quote the passage before answering.
 
 ## Experiments
 
@@ -71,7 +79,7 @@ The 3B model did not connect "food budget" with "meal allowance", and in the sec
 ## Check yourself
 
 <details>
-<summary>hit@k is 1.00 but answer accuracy is 16/18. Where should you spend your effort?</summary>
+<summary>hit@k is 1.00 but answer accuracy is 15/18. Where should you spend your effort?</summary>
 
 On generation: prompt, model, or context noise. Retrieval already delivers the right file every time.
 </details>
