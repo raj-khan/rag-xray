@@ -1,0 +1,20 @@
+[
+  {"q": "How many vacation days do I get each year?", "source": "leave-policy.md", "answer": "24"},
+  {"q": "Until when can I use leave days carried over from last year?", "source": "leave-policy.md", "answer": "March 31"},
+  {"q": "When do I need a note from a doctor?", "source": "leave-policy.md", "answer": "3"},
+  {"q": "How long is parental leave?", "source": "leave-policy.md", "answer": "16 weeks"},
+  {"q": "What is the food budget per day when travelling abroad?", "source": "expenses.md", "answer": "70"},
+  {"q": "I bought a 700 dollar monitor for a client demo. Who has to sign off?", "source": "expenses.md", "answer": "director"},
+  {"q": "What is the deadline for submitting an expense claim?", "source": "expenses.md", "answer": "30 days"},
+  {"q": "Can I fly premium economy to a conference 8 hours away?", "source": "expenses.md", "answer": "premium economy"},
+  {"q": "How quickly must I respond when I get paged at night?", "source": "oncall.md", "answer": "15 minutes"},
+  {"q": "How much extra pay do I get for a week of on-call?", "source": "oncall.md", "answer": "300"},
+  {"q": "When is the on-call handoff?", "source": "oncall.md", "answer": "Monday"},
+  {"q": "What does KST-503 mean?", "source": "kestrel-api.md", "answer": "maintenance"},
+  {"q": "Our integration keeps getting throttled. How many calls per minute are allowed on the enterprise plan?", "source": "kestrel-api.md", "answer": "3000"},
+  {"q": "How often do Kestrel keys have to be replaced?", "source": "kestrel-api.md", "answer": "90 days"},
+  {"q": "I left my laptop on the train. What should I do?", "source": "security.md", "answer": "sec-incidents"},
+  {"q": "Which password manager do we use?", "source": "security.md", "answer": "Vaultbox"},
+  {"q": "Can my friend come to the Lisbon office with me?", "source": "office.md", "answer": "Perch"},
+  {"q": "What time does the office close?", "source": "office.md", "answer": "20:00"}
+]
