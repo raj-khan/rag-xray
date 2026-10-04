@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rag-xray</title>
+<meta name="description" content="Learn retrieval-augmented generation and see inside every step.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#/learn">
+    <img src="favicon.svg" alt="" width="22" height="22">
+    <span>rag<b>xray</b></span>
+  </a>
+  <nav class="tabs" aria-label="Main">
+    <a href="#/learn" data-tab="learn">Learn</a>
+    <a href="#/xray" data-tab="xray">X-ray</a>
+    <a href="#/chunks" data-tab="chunks">Chunks</a>
+  </nav>
+  <div class="models" id="models" title="Configured with EMBED_* and CHAT_* environment variables"></div>
+  <button class="icon-btn" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+
+<!-- ============ LEARN ============ -->
+<main id="view-learn" class="view learn" hidden>
+  <aside class="sidebar">
+    <div class="progress">
+      <div class="progress-label"><span>Your progress</span><span id="progress-text">0 / 0</span></div>
+      <div class="bar"><div id="progress-bar"></div></div>
+    </div>
+    <ol id="lesson-list" class="lesson-list"></ol>
+    <p class="hint">Write your own course: any folder of Markdown files works with <code>-lessons ./folder</code>.</p>
+  </aside>
+  <article class="lesson" id="lesson">
+    <div class="lesson-head">
+      <div class="eyebrow" id="lesson-eyebrow"></div>
+      <h1 id="lesson-title"></h1>
+      <p class="lede" id="lesson-summary"></p>
+      <div class="runbox" id="runbox" hidden>
+        <span class="runbox-label">Run it</span>
+        <code id="run-cmd"></code>
+        <button class="btn ghost small" id="copy-run">Copy</button>
+      </div>
+    </div>
+    <div class="prose" id="lesson-body"></div>
+    <footer class="lesson-foot">
+      <label class="done-toggle"><input type="checkbox" id="lesson-done"> Mark lesson complete</label>
+      <a class="btn" href="#/xray">Try it in the X-ray →</a>
+    </footer>
+    <nav class="pager" id="pager"></nav>
+  </article>
+  <aside class="toc" id="toc" aria-label="On this page"></aside>
+</main>
+
+<!-- ============ X-RAY ============ -->
+<main id="view-xray" class="view xray" hidden>
+  <aside class="controls">
+    <section class="card">
+      <div class="card-head">
+        <h2>Documents</h2>
+        <button class="link" id="reset-docs">Reset to sample</button>
+      </div>
+      <label class="drop" id="drop">
+        <input type="file" id="file-input" multiple accept=".md,.markdown,.txt" hidden>
+        <strong>Drop .md or .txt files</strong>
+        <span>or click to choose. Study anything: notes, docs, a book.</span>
+      </label>
+      <ul class="doc-list" id="doc-list"></ul>
+      <div class="status" id="index-status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Pipeline settings</h2>
+      <div class="field">
+        <label for="chunk-size">Chunk size <output id="chunk-size-out"></output></label>
+        <input type="range" id="chunk-size" min="100" max="2000" step="50">
+        <small>Max characters per chunk. Changing it re-indexes (cached embeddings make it fast).</small>
+      </div>
+      <div class="field">
+        <label for="topk">Chunks in prompt (k) <output id="topk-out">4</output></label>
+        <input type="range" id="topk" min="1" max="10" value="4">
+      </div>
+      <div class="field">
+        <span class="label">Retrieval</span>
+        <div class="segmented" id="mode" role="radiogroup">
+          <button data-mode="vector" role="radio">Vector</button>
+          <button data-mode="keyword" role="radio">Keyword</button>
+          <button data-mode="hybrid" role="radio" class="on">Hybrid</button>
+        </div>
+      </div>
+      <label class="switch"><input type="checkbox" id="no-rag"> <span>No retrieval (model's memory only)</span></label>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <form class="ask" id="ask-form">
+      <textarea id="question" rows="2" placeholder="Ask a question about your documents..." required></textarea>
+      <button class="btn primary" id="ask-btn" type="submit">Ask <kbd>⏎</kbd></button>
+    </form>
+    <div class="chips" id="examples"></div>
+
+    <div class="empty" id="xray-empty">
+      <div class="pipeline-diagram" aria-hidden="true">
+        <span>question</span><i></i><span>embed</span><i></i><span>search</span><i></i><span>top-k</span><i></i><span>prompt</span><i></i><span>LLM</span>
+      </div>
+      <p>Ask anything. You will see every step: what was retrieved by each method, how they were fused, the exact prompt, and the streamed answer.</p>
+    </div>
+
+    <div id="result" hidden>
+      <section class="step" id="step-answer">
+        <header><span class="num" title="Generate">G</span><h3>Generate: the answer</h3><div class="timings" id="timings"></div></header>
+        <div class="answer" id="answer"></div>
+        <div class="sources" id="sources"></div>
+      </section>
+
+      <section class="step" id="step-retrieval">
+        <header><span class="num" title="Retrieve">R</span><h3>Retrieve</h3><p>Top results from each method. <mark class="key">Highlighted</mark> chunks went into the prompt.</p></header>
+        <div class="columns" id="columns"></div>
+      </section>
+
+      <section class="step collapsible" id="step-prompt">
+        <header><span class="num" title="Augment">A</span><h3>Augment: the prompt</h3><p>Exactly what the model received.</p>
+          <button class="btn ghost small" id="copy-prompt">Copy</button></header>
+        <pre class="prompt" id="prompt"></pre>
+      </section>
+    </div>
+  </section>
+</main>
+
+<!-- ============ CHUNKS ============ -->
+<main id="view-chunks" class="view chunks-view" hidden>
+  <div class="chunks-head">
+    <div>
+      <h1>Chunks</h1>
+      <p class="muted" id="chunks-summary"></p>
+    </div>
+    <input type="search" id="chunk-filter" placeholder="Filter chunks...">
+  </div>
+  <div class="chunk-grid" id="chunk-grid"></div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

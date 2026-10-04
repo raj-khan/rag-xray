@@ -19,12 +19,6 @@ import (
 	"github.com/raj-khan/rag-xray/internal/retrieve"
 )
 
-const systemPrompt = `You are a helpful assistant for Orbita Labs employees.
-Answer the question using ONLY the numbered context passages.
-Cite the passages you used like [1] or [2].
-If the context does not contain the answer, say "I don't know based on the documents."
-Keep answers short.`
-
 var (
 	k          = flag.Int("k", 4, "number of chunks to retrieve")
 	mode       = flag.String("mode", "hybrid", "retrieval mode: vector, keyword or hybrid")
@@ -65,19 +59,15 @@ func ask(r *retrieve.Retriever, question string) {
 		log.Fatal(err)
 	}
 
-	// 2. Augment: build a prompt with numbered sources.
-	var ctx strings.Builder
-	for i, h := range hits {
-		fmt.Fprintf(&ctx, "[%d] (%s > %s)\n%s\n\n", i+1, h.Chunk.Source, h.Chunk.Heading, h.Chunk.Text)
-	}
-	user := fmt.Sprintf("Context:\n%s\nQuestion: %s", ctx.String(), question)
+	// 2. Augment: numbered sources, then the question (retrieve/prompt.go).
+	user := retrieve.Prompt(question, hits)
 	if *showPrompt {
-		fmt.Printf("----- SYSTEM -----\n%s\n----- USER -----\n%s\n------------------\n", systemPrompt, user)
+		fmt.Printf("----- SYSTEM -----\n%s\n----- USER -----\n%s\n------------------\n", retrieve.SystemPrompt, user)
 	}
 
 	// 3. Generate.
 	chat(r.LLM, []ai.Message{
-		{Role: "system", Content: systemPrompt},
+		{Role: "system", Content: retrieve.SystemPrompt},
 		{Role: "user", Content: user},
 	})
 
