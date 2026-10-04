@@ -1,0 +1,46 @@
+# One command, fully local:   docker compose up
+# Then open http://localhost:8080
+#
+# First start downloads the models (~2.3 GB) into a Docker volume.
+# Using a hosted API instead? Put keys in .env (see .env.example) and run:
+#   docker compose up --no-deps --build app
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Pulls the default models once, then exits.
+  models:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["sh", "-c", "ollama pull nomic-embed-text && ollama pull llama3.2"]
+    restart: "no"
+
+  app:
+    build: .
+    image: ghcr.io/raj-khan/rag-xray:latest
+    ports:
+      - "8080:8080"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      models:
+        condition: service_completed_successfully
+        required: false
+
+volumes:
+  ollama:
