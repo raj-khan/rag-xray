@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/ai"
+	"github.com/raj-khan/rag-xray/internal/ai"
 )
 
 var sentences = []string{

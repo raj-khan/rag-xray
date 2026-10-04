@@ -14,8 +14,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/ai"
-	"github.com/raj-khan/rag-from-scratch/internal/retrieve"
+	"github.com/raj-khan/rag-xray/internal/ai"
+	"github.com/raj-khan/rag-xray/internal/retrieve"
 )
 
 type example struct {
