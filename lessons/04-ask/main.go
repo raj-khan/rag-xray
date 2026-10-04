@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/ollama"
+	"github.com/raj-khan/rag-from-scratch/internal/ai"
 	"github.com/raj-khan/rag-from-scratch/internal/retrieve"
 )
 
@@ -55,7 +55,7 @@ func main() {
 func ask(r *retrieve.Retriever, question string) {
 	if *noRAG {
 		fmt.Println("(no retrieval: the model only has its training data)")
-		chat(r.LLM, []ollama.Message{{Role: "user", Content: question}})
+		chat(r.LLM, []ai.Message{{Role: "user", Content: question}})
 		return
 	}
 
@@ -76,7 +76,7 @@ func ask(r *retrieve.Retriever, question string) {
 	}
 
 	// 3. Generate.
-	chat(r.LLM, []ollama.Message{
+	chat(r.LLM, []ai.Message{
 		{Role: "system", Content: systemPrompt},
 		{Role: "user", Content: user},
 	})
@@ -87,7 +87,7 @@ func ask(r *retrieve.Retriever, question string) {
 	}
 }
 
-func chat(c *ollama.Client, msgs []ollama.Message) {
+func chat(c ai.Chatter, msgs []ai.Message) {
 	fmt.Println()
 	if _, err := c.Chat(msgs, func(t string) { fmt.Print(t) }); err != nil {
 		log.Fatal(err)

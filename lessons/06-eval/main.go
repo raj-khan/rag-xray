@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/ollama"
+	"github.com/raj-khan/rag-from-scratch/internal/ai"
 	"github.com/raj-khan/rag-from-scratch/internal/retrieve"
 )
 
@@ -97,7 +97,7 @@ func main() {
 		for i, h := range hits {
 			fmt.Fprintf(&ctx, "[%d] %s\n\n", i+1, h.Chunk.Text)
 		}
-		got, err := r.LLM.Chat([]ollama.Message{
+		got, err := r.LLM.Chat([]ai.Message{
 			{Role: "system", Content: "Answer using only the context. One short sentence."},
 			{Role: "user", Content: "Context:\n" + ctx.String() + "Question: " + ex.Q},
 		}, nil)

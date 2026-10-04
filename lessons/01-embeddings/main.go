@@ -1,21 +1,20 @@
 // Lesson 1: embeddings and similarity.
 //
-// This file deliberately uses raw HTTP and no project packages, so you can
-// see exactly what an embedding call is.
+// Uses whichever embedding model you configured (Ollama by default). Under
+// the hood an embedding call is one HTTP request; see internal/ai.
 //
 //	go run ./lessons/01-embeddings "how do I make pasta"
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/raj-khan/rag-from-scratch/internal/ai"
 )
 
 var sentences = []string{
@@ -28,21 +27,17 @@ var sentences = []string{
 	"The stock market fell sharply after the interest rate decision.",
 }
 
-// embed calls Ollama's /api/embed and returns one vector per input.
-func embed(inputs []string) [][]float64 {
-	body, _ := json.Marshal(map[string]any{"model": "nomic-embed-text", "input": inputs})
-	resp, err := http.Post("http://localhost:11434/api/embed", "application/json", bytes.NewReader(body))
+// embed turns texts into vectors using the model from EMBED_* settings.
+func embed(inputs []string) ([][]float64, string) {
+	e, err := ai.NewEmbedder()
 	if err != nil {
-		log.Fatalf("is Ollama running? %v", err)
-	}
-	defer resp.Body.Close()
-	var out struct {
-		Embeddings [][]float64 `json:"embeddings"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		log.Fatal(err)
 	}
-	return out.Embeddings
+	vecs, err := e.Embed(inputs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return vecs, e.Model()
 }
 
 func cosine(a, b []float64) float64 {
@@ -61,10 +56,10 @@ func main() {
 		query = strings.Join(os.Args[1:], " ")
 	}
 
-	vecs := embed(append([]string{query}, sentences...))
+	vecs, model := embed(append([]string{query}, sentences...))
 	q, docs := vecs[0], vecs[1:]
 
-	fmt.Printf("Each text became a vector of %d numbers. The query starts with:\n  %.3f\n\n", len(q), q[:6])
+	fmt.Printf("Model %s turned each text into a vector of %d numbers. The query starts with:\n  %.3f\n\n", model, len(q), q[:6])
 	fmt.Printf("Query: %q\n\n", query)
 
 	type scored struct {

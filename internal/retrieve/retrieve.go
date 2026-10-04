@@ -4,26 +4,89 @@ package retrieve
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
+	"github.com/raj-khan/rag-from-scratch/internal/ai"
 	"github.com/raj-khan/rag-from-scratch/internal/bm25"
-	"github.com/raj-khan/rag-from-scratch/internal/ollama"
+	"github.com/raj-khan/rag-from-scratch/internal/chunk"
 	"github.com/raj-khan/rag-from-scratch/internal/store"
 	"github.com/raj-khan/rag-from-scratch/internal/vec"
 )
 
-// nomic-embed-text was trained with these task prefixes. Using them
-// noticeably improves retrieval; try removing them in lesson 6.
-const (
-	DocPrefix   = "search_document: "
-	QueryPrefix = "search_query: "
-)
+// Some embedding models were trained with task prefixes and retrieve
+// noticeably better when you use them. nomic-embed-text is one; most
+// hosted models (e.g. OpenAI) need none.
+func prefixes(model string) (doc, query string) {
+	if strings.Contains(model, "nomic") {
+		return "search_document: ", "search_query: "
+	}
+	return "", ""
+}
 
 // DocText is what gets embedded for a chunk. Adding the file name and
 // heading path ("contextual chunking") helps short chunks that would
 // otherwise be ambiguous, e.g. a bare "Limit: 600 per minute".
-func DocText(c store.Chunk) string {
-	return fmt.Sprintf("%sDocument: %s\nSection: %s\n\n%s", DocPrefix, c.Source, c.Heading, c.Text)
+func DocText(model string, c store.Chunk) string {
+	p, _ := prefixes(model)
+	return fmt.Sprintf("%sDocument: %s\nSection: %s\n\n%s", p, c.Source, c.Heading, c.Text)
+}
+
+// Doc is one input document.
+type Doc struct {
+	Name string
+	Text string
+}
+
+// LoadDir reads every .md and .txt file in dir.
+func LoadDir(dir string) ([]Doc, error) {
+	var docs []Doc
+	for _, pattern := range []string{"*.md", "*.markdown", "*.txt"} {
+		files, err := filepath.Glob(filepath.Join(dir, pattern))
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			b, err := os.ReadFile(f)
+			if err != nil {
+				return nil, err
+			}
+			docs = append(docs, Doc{filepath.Base(f), string(b)})
+		}
+	}
+	if len(docs) == 0 {
+		return nil, fmt.Errorf("no .md or .txt files in %s", dir)
+	}
+	return docs, nil
+}
+
+// Build chunks and embeds documents into a new store: the offline half of RAG.
+func Build(docs []Doc, maxChars int, e ai.Embedder) (*store.Store, error) {
+	s := &store.Store{EmbedModel: e.Model()}
+	for _, d := range docs {
+		for _, p := range chunk.Markdown(d.Text, maxChars) {
+			s.Chunks = append(s.Chunks, store.Chunk{
+				ID: len(s.Chunks), Source: d.Name, Heading: p.Heading, Text: p.Text,
+			})
+		}
+	}
+	if len(s.Chunks) == 0 {
+		return nil, fmt.Errorf("documents produced no chunks")
+	}
+	texts := make([]string, len(s.Chunks))
+	for i, c := range s.Chunks {
+		texts[i] = DocText(e.Model(), c)
+	}
+	vecs, err := e.Embed(texts)
+	if err != nil {
+		return nil, err
+	}
+	for i := range s.Chunks {
+		s.Chunks[i].Vector = vecs[i]
+	}
+	return s, nil
 }
 
 type Hit struct {
@@ -34,19 +97,38 @@ type Hit struct {
 type Retriever struct {
 	Store *store.Store
 	BM25  *bm25.Index
-	LLM   *ollama.Client
+	Embed ai.Embedder
+	LLM   ai.Chatter
 }
 
-func Open(path string) (*Retriever, error) {
-	s, err := store.Load(path)
-	if err != nil {
-		return nil, fmt.Errorf("load index (run lesson 03 first): %w", err)
+// New wraps a store for searching. Queries must be embedded with the same
+// model as the chunks, otherwise the vectors are not comparable.
+func New(s *store.Store, e ai.Embedder, c ai.Chatter) (*Retriever, error) {
+	if s.EmbedModel != e.Model() {
+		return nil, fmt.Errorf("index was built with embedding model %q but EMBED_MODEL is %q: rebuild the index (lesson 03)", s.EmbedModel, e.Model())
 	}
 	texts := make([]string, len(s.Chunks))
 	for i, c := range s.Chunks {
 		texts[i] = c.Source + " " + c.Heading + " " + c.Text
 	}
-	return &Retriever{Store: s, BM25: bm25.New(texts), LLM: ollama.New()}, nil
+	return &Retriever{Store: s, BM25: bm25.New(texts), Embed: e, LLM: c}, nil
+}
+
+// Open loads a saved index and connects the models configured in the environment.
+func Open(path string) (*Retriever, error) {
+	s, err := store.Load(path)
+	if err != nil {
+		return nil, fmt.Errorf("load index (run lesson 03 first): %w", err)
+	}
+	e, err := ai.NewEmbedder()
+	if err != nil {
+		return nil, err
+	}
+	c, err := ai.NewChatter()
+	if err != nil {
+		return nil, err
+	}
+	return New(s, e, c)
 }
 
 // Search runs one of the modes: "vector", "keyword" or "hybrid".
@@ -67,7 +149,8 @@ func (r *Retriever) Search(query, mode string, k int) ([]Hit, error) {
 }
 
 func (r *Retriever) Vector(query string, k int) ([]Hit, error) {
-	qv, err := r.LLM.Embed([]string{QueryPrefix + query})
+	_, qp := prefixes(r.Embed.Model())
+	qv, err := r.Embed.Embed([]string{qp + query})
 	if err != nil {
 		return nil, err
 	}
