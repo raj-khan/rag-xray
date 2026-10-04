@@ -84,6 +84,7 @@ textarea:focus, input:focus-visible, button:focus-visible, a:focus-visible { out
 .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
 .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.lesson-nav > summary { display: none; }
 .lesson-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .lesson-list a { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--text); text-decoration: none; }
 .lesson-list a:hover { background: var(--surface-2); }
@@ -244,7 +245,9 @@ mark.key { background: var(--accent-soft); color: var(--text); padding: 0 4px; b
   .learn, .xray { grid-template-columns: 1fr; padding: 0 16px; }
   .xray { padding-top: 16px; }
   .sidebar { position: static; height: auto; padding: 16px 0 0; }
-  .lesson-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .lesson-nav > summary { display: block; cursor: pointer; font-weight: 600; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  .lesson-nav[open] > summary { margin-bottom: 8px; }
+  .hint { display: none; }
   .controls { position: static; max-height: none; }
   .lesson { padding-top: 16px; }
   .ask { grid-template-columns: 1fr; }
