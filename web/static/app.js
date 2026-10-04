@@ -142,6 +142,8 @@ async function showLesson(slug) {
   $("#toc").replaceChildren(...(heads.length ? [el("h4", { text: "On this page" })] : []),
     ...heads.map((h) => el("a", { href: "#", text: h.textContent, onclick: (e) => { e.preventDefault(); h.scrollIntoView({ behavior: "smooth" }); } })));
   renderLessonList(slug);
+  // On phones the lesson list collapses so the lesson itself comes first.
+  $("#lesson-nav").open = !matchMedia("(max-width: 860px)").matches;
 }
 $("#copy-run").addEventListener("click", () => copy($("#run-cmd").textContent));
 

@@ -93,13 +93,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		var ctx strings.Builder
-		for i, h := range hits {
-			fmt.Fprintf(&ctx, "[%d] %s\n\n", i+1, h.Chunk.Text)
-		}
 		got, err := r.LLM.Chat([]ai.Message{
-			{Role: "system", Content: "Answer using only the context. One short sentence."},
-			{Role: "user", Content: "Context:\n" + ctx.String() + "Question: " + ex.Q},
+			{Role: "system", Content: retrieve.SystemPrompt},
+			{Role: "user", Content: retrieve.Prompt(ex.Q, hits)},
 		}, nil)
 		if err != nil {
 			log.Fatal(err)
