@@ -1,3 +1,3 @@
-module github.com/raj-khan/rag-from-scratch
+module github.com/raj-khan/rag-xray
 
 go 1.27.1

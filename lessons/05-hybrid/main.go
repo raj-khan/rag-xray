@@ -11,7 +11,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/retrieve"
+	"github.com/raj-khan/rag-xray/internal/retrieve"
 )
 
 var examples = []string{

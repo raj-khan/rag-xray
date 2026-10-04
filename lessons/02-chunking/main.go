@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/chunk"
+	"github.com/raj-khan/rag-xray/internal/chunk"
 )
 
 func main() {

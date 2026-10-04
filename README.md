@@ -1,4 +1,4 @@
-# rag-from-scratch
+# rag-xray
 
 Learn Retrieval-Augmented Generation by building it, step by step, in plain Go with a local LLM.
 

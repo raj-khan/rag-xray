@@ -3,7 +3,7 @@ package retrieve
 import (
 	"testing"
 
-	"github.com/raj-khan/rag-from-scratch/internal/store"
+	"github.com/raj-khan/rag-xray/internal/store"
 )
 
 func TestRRFRewardsAgreement(t *testing.T) {

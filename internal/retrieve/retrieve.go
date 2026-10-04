@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/raj-khan/rag-from-scratch/internal/ai"
-	"github.com/raj-khan/rag-from-scratch/internal/bm25"
-	"github.com/raj-khan/rag-from-scratch/internal/chunk"
-	"github.com/raj-khan/rag-from-scratch/internal/store"
-	"github.com/raj-khan/rag-from-scratch/internal/vec"
+	"github.com/raj-khan/rag-xray/internal/ai"
+	"github.com/raj-khan/rag-xray/internal/bm25"
+	"github.com/raj-khan/rag-xray/internal/chunk"
+	"github.com/raj-khan/rag-xray/internal/store"
+	"github.com/raj-khan/rag-xray/internal/vec"
 )
 
 // Some embedding models were trained with task prefixes and retrieve
