@@ -1,0 +1,26 @@
+name: Lesson feedback
+description: Something in a lesson was unclear, wrong, or could be better
+labels: [lessons]
+body:
+  - type: dropdown
+    id: lesson
+    attributes:
+      label: Which lesson?
+      options:
+        - "0: What is RAG?"
+        - "1: Embeddings"
+        - "2: Chunking"
+        - "3: Indexing"
+        - "4: The RAG loop"
+        - "5: Hybrid search"
+        - "6: Evaluation"
+        - "7: Beyond the basics"
+        - Idea for a new lesson
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What was confusing or missing?
+    validations:
+      required: true
