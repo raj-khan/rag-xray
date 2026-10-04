@@ -143,7 +143,7 @@ func (r *Retriever) Search(query, mode string, k int) ([]Hit, error) {
 		if err != nil {
 			return nil, err
 		}
-		return top(RRF(v, r.Keyword(query, 20)), k), nil
+		return Fuse(v, r.Keyword(query, 20), k), nil
 	}
 	return nil, fmt.Errorf("unknown mode %q (vector, keyword, hybrid)", mode)
 }
@@ -190,6 +190,11 @@ func RRF(lists ...[]Hit) []Hit {
 		hits = append(hits, Hit{chunks[id], s})
 	}
 	return hits
+}
+
+// Fuse merges vector and keyword results with RRF and keeps the best k.
+func Fuse(vector, keyword []Hit, k int) []Hit {
+	return top(RRF(vector, keyword), k)
 }
 
 func top(hits []Hit, k int) []Hit {
