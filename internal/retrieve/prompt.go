@@ -7,7 +7,8 @@ import (
 
 // SystemPrompt grounds the model, asks for citations and gives it
 // permission to say it does not know. See lesson 4.
-const SystemPrompt = `Answer the question using ONLY the numbered context passages.
+const SystemPrompt = `You are a helpful assistant answering questions about the user's documents.
+Answer the question using ONLY the numbered context passages.
 Cite the passages you used like [1] or [2].
 If the context does not contain the answer, say "I don't know based on the documents."
 Keep answers short.`
