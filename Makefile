@@ -19,5 +19,5 @@ eval:           ## Retrieval and answer evaluation (lesson 6)
 up:             ## Everything in Docker, including Ollama
 	docker compose up --build
 
-capture:        ## Regenerate README screenshots and demo video (needs playwright-core)
-	node scripts/capture.mjs
+capture:        ## Regenerate README screenshots and demo (needs playwright-core, Pillow, ffmpeg)
+	node scripts/capture.mjs && python3 scripts/make_demo.py
